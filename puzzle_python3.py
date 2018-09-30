@@ -5,7 +5,10 @@ import random
 import marshal
 from CayleyDickson import *
 from state import *
+import ConsoleUtils as cu
+from colorama import Fore, Back, Style, init
 
+init()
 
 use_quaternions, use_base_octonions = False, False
 # use_quaternions = True
@@ -41,6 +44,19 @@ def load_states():
     states = marshal.load(f)
     return [State(s, True) for s in states]
 
+def illust(state):
+  res = "("
+  for x in state.value:
+    if x>0:
+      res+=Fore.GREEN+"#"+Style.RESET_ALL+" "
+    elif x == 0:
+      res+="# "
+    else:
+      res+=Fore.RED+"#"+Style.RESET_ALL+" "
+  res = res.strip()+")"
+  if any(el%2==1 for el in state.double):
+    res+="/2"
+  return res
 
 def main():
   i, j, h, winning_state = [State(c) for c in get_generators()]
@@ -51,19 +67,23 @@ def main():
 
   current_state = states[random.randrange(len(states))]
 
-  print("Random initial state: " + str(current_state))
+  print("Random initial state: " + str(current_state) + " or " + illust(current_state))
   help_string = \
     """
       Enter an input expression to right-multiply to the current state.
       With the convention in https://en.wikipedia.org/wiki/Octonion#Definition
       and the abbreviations:
-      i = """ + str(i) + """
-      j = """ + str(j) + """
-      h = """ + str(h) + """
+      i = """ + str(i) + """ or """ + illust(i) + """
+      j = """ + str(j) + """ or """ + illust(j) + """
+      h = """ + str(h) + """ or """ + illust(h) + """
       Use i, j, or h as generators and use ( ) and octonion multiplication *
       to construct complex expressions.
-      Example: h * (i * j)
-      The objective is to reach """ + str(winning_state) + """
+      Moves can be repeated by raising to a power, as in (expression)**n.
+      The inverse of an expression is given by (expression).inv().
+      The previous move can be repeated with r.
+      Examples: h * (i * j)
+                h**2 * (j * h).inv()
+      The objective is to reach """ + str(winning_state) + """ or """+illust(winning_state) + """
       Enter q to stop.
     """
 
@@ -82,33 +102,36 @@ def main():
 
 
   print(help_string)
-
-  print("Current state: " + str(current_state))
+  
+  print("Current state: " + illust(current_state))
 
   while True:
+    cu.clearLine()
     input_string = input("Input = ")
-
     if input_string in ['q', 'exit']:
       break
 
     try:
       input_value = eval(input_string)
+      r = input_value
       if input_value not in states_set:
-        print("Input value " + str(input_value) + " is not a valid state")
+        #print("Input value " + str(input_value) + " is not a valid state")
         raise
 
-      print("Input = " + input_string + " = " + str(input_value))
+      cu.reprint("Input = " + input_string + " = " + str(input_value) + " or " + illust(input_value))
       current_state = current_state * input_value
-      print("(New state) = (Old state) * (Input) = " + str(current_state))
-
+      #print("(New state) = (Old state) * (Input) = " + str(current_state))
+      cu.relMove(-3,0)
+      cu.reprint("Current state: " + illust(current_state))
       if current_state == winning_state:
         print(winning_message)
         break
 
     except Exception:
-      print("Invalid input")
-      print(help_string)
-      print("Current state: " + str(current_state))
+      cu.reprint("Invalid input")
+      #print(help_string)
+      cu.relMove(-3,0)
+      cu.reprint("Current state: " + illust(current_state))
 
 
 if __name__ == '__main__':

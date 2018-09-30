@@ -34,3 +34,22 @@ class State(object):
   def __eq__(self, other):
     return self.double == other.double
 
+  def __pow__(self, other):
+    temp = self
+    for i in range(other-1):
+      temp*=self
+    return temp
+
+  def conj(self):
+    temp = self.value.copy()
+    for i in range(1,len(self.value)):
+      temp[i] = -self.value[i]
+    return State(temp)
+
+  def inv(self):
+    temp = self.value.copy()
+    star = self.conj()
+    x = (self*star).value[0]
+    for i in range(len(self.value)):
+      temp[i] = (star.value[i])/x
+    return State(temp)
