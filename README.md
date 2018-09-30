@@ -4,7 +4,7 @@ This repo contains a proof-of-concept puzzle on integral octonions, and some scr
 
 ## How to run the integral octonions puzzle?
 - Install Python, 2.* or 3.*.
-- Install numpy.
+- Install numpy and colorama.
 - Run puzzle_python2.py or puzzle_python3.py depending on the Python version you installed.
 - Follow the instructions to solve it. You may want to refer to the explanations below.
 
