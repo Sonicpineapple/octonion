@@ -7,12 +7,13 @@ from CayleyDickson import *
 from state import *
 import ConsoleUtils as cu
 from colorama import Fore, Back, Style, init
+from random import randint
 
 init()
 
 use_quaternions, use_base_octonions = False, False
-# use_quaternions = True
-# use_base_octonions = True
+#use_quaternions = True
+#use_base_octonions = True
 
 
 def get_generators():
@@ -58,10 +59,59 @@ def illust(state):
     res+="/2"
   return res
 
+
 def main():
   i, j, h, winning_state = [State(c) for c in get_generators()]
   states = load_states()
   states_set = set(states)
+
+  movelist = [i,j,h,i*h,j*h,i.inv(),j.inv(),h.inv(),(i*h).inv(),(j*h).inv()]
+  moves = ["i","j","h","i*h","j*h","i.inv()","j.inv()","h.inv()","(i*h).inv()","(j*h).inv()"]
+  solution = ""
+
+  def ida(state,d,previ=-1):
+    nonlocal movelist
+    nonlocal winning_state
+    nonlocal solution
+    nonlocal moves
+    if state == winning_state:
+      return True
+    elif d>0:
+      for i in range(10):
+        if (previ<0 or i!=(previ+5)%10) and ida(state*movelist[i],d-1,i):
+          solution = moves[i] + " "+solution
+          return True
+    return False
+
+  def generate():
+    nonlocal movelist
+    nonlocal moves
+    gens = []
+    gens.append(State([1,0,0,0,0,0,0,0]))
+    gensols = [0]
+    d = 0
+    while True:
+      d+=1
+      if d>6:
+        break
+      extra = []
+      for x in gens:
+        for m in movelist:
+          temp = x*m
+          if temp not in gens and temp not in extra:
+            extra.append(temp)
+            gensols.append(d)
+      if len(extra) == 0:
+        break
+      for i in extra:
+        gens.append(i)
+    f = open("Generated.txt","a")
+    for i in range(len(gens)):
+      f.write(str(gens[i]) + " - " + str(gensols[i]) + "\n")
+    f.close()
+    print(str(len(gens))+"\n\n")
+    
+    
 
   print("Loaded " + repr(len(states)) + " states")
 
@@ -87,8 +137,9 @@ def main():
       Enter q to stop.
     """
 
-  winning_message = \
-  """
+  colours = [Fore.RED,Fore.GREEN,Fore.BLUE,Fore.CYAN,Fore.MAGENTA,Fore.YELLOW]
+  winning_message = (
+  colours[randint(0,len(colours))] + """
      __      __                         __       __  __            __ 
     /  \    /  |                       /  |  _  /  |/  |          /  |
     $$  \  /$$/______   __    __       $$ | / \ $$ |$$/  _______  $$ |
@@ -98,41 +149,69 @@ def main():
         $$ | $$ \__$$ |$$ \__$$ |      $$$$/  $$$$ |$$ |$$ |  $$ | __ 
         $$ | $$    $$/ $$    $$/       $$$/    $$$ |$$ |$$ |  $$ |/  |
         $$/   $$$$$$/   $$$$$$/        $$/      $$/ $$/ $$/   $$/ $$/ 
-  """
+  """ + Style.RESET_ALL)
 
 
   print(help_string)
   
   print("Current state: " + illust(current_state))
 
+  #generate()
+  
+  #if ida(State([0,1,0,0,0,0,0,0]),4):
+  #  print(solution)
+  solved = False
+
+  
   while True:
     cu.clearLine()
     input_string = input("Input = ")
     if input_string in ['q', 'exit']:
       break
 
-    try:
-      input_value = eval(input_string)
-      r = input_value
-      if input_value not in states_set:
-        #print("Input value " + str(input_value) + " is not a valid state")
-        raise
-
-      cu.reprint("Input = " + input_string + " = " + str(input_value) + " or " + illust(input_value))
-      current_state = current_state * input_value
-      #print("(New state) = (Old state) * (Input) = " + str(current_state))
+    if input_string == "set":
+      temp = current_state
+      current_state = State(eval(input("Enter new state: ")))
+      if current_state not in states_set:
+        current_state = temp
+        cu.relMove(-1,0)
+        print("Invalid state")
       cu.relMove(-3,0)
       cu.reprint("Current state: " + illust(current_state))
-      if current_state == winning_state:
-        print(winning_message)
+    elif input_string in ["ida","solve"]:
+      cu.clearLine()
+      for d in range(0,7):
+        if ida(current_state,d):
+          print(solution+"\n\n")
+          solved = True
+          break
+      if solved:
         break
+      cu.relMove(-1,0)
+    else:
+      try:
+        input_value = eval(input_string)
+        r = input_value
+        if input_value not in states_set:
+          #print("Input value " + str(input_value) + " is not a valid state")
+          raise
 
-    except Exception:
-      cu.reprint("Invalid input")
-      #print(help_string)
-      cu.relMove(-3,0)
-      cu.reprint("Current state: " + illust(current_state))
+        cu.reprint("Input = " + input_string + " = " + str(input_value) + " or " + illust(input_value))
+        current_state = current_state * input_value
+        #print("(New state) = (Old state) * (Input) = " + str(current_state))
+        cu.relMove(-3,0)
+        cu.reprint("Current state: " + illust(current_state))
+        if current_state == winning_state:
+          cu.reprint(winning_message)
+          break
 
+      except Exception:
+        cu.reprint("Invalid input")
+        #print(help_string)
+        cu.relMove(-3,0)
+        cu.reprint("Current state: " + illust(current_state))
+
+  
 
 if __name__ == '__main__':
   main()
